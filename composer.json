@@ -1,0 +1,5 @@
+{
+    "require": {
+        "iu-redcap/phpcap": "^1.1"
+    }
+}
