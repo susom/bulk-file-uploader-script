@@ -8,16 +8,22 @@ $config = (object) parse_ini_file("_config.ini");
 // Parse arguments
 parse_str(implode('&', array_slice($argv, 1)), $_GET);
 
-$usage = "call script and specify the folder containing the files to upload, as in:\n" .
-    "php bulk_upload.php folder=my_files\n" .
-    "where my_files contains all of the keys to upload.\n\n";
+$usage = "call script and specify two parameters:\n" .
+    " field: the field containing the files to download\n" .
+    " folder: the folder to place the files in\n\n" .
+    "php bulk_download.php field=upload_field folder=dest_dir\n\n";
 
 $log = [];
 
+if (empty($_GET['field'])) {
+    exit("$usage Please include field=upload_field as an argument");
+}
+
 if (empty($_GET['folder'])) {
-    exit("$usage Please include folder=path_to_folder as an argument");
+    exit("$usage Please include folder=dest_dir as an argument");
 }
 $folder = $_GET['folder'];
+$field  = filter_var($_GET['field'], FILTER_SANITIZE_STRING);
 
 if (! is_dir($folder)) {
     exit("$usage The specified folder $folder does not exist");
@@ -32,6 +38,32 @@ if (empty($config->apiUrl)) {
 }
 
 $phpCap = new IU\PHPCap\RedCapProject($config->apiUrl, $config->apiToken);
+
+// Get record_id field
+$m = $phpCap->exportMetadata('php');
+$first_field = array_shift($m);
+$record_id_field = $first_field['field_name'];
+
+// Get all records with a value for that file:
+$q = $phpCap->exportRecords('php','flat',null,array($record_id_field, $field));
+
+foreach ($q as $record) {
+    $record_id = $record[$record_id_field];
+    if(!empty($record[$field])) {
+        $file = $phpCap->exportFile($record_id,$field);
+        var_dump($file);
+    }
+}
+
+
+var_dump($q);
+
+exit();
+
+
+
+
+
 
 // Scan directory for files
 $files = scandir($folder);

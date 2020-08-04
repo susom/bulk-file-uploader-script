@@ -103,6 +103,13 @@ foreach ($files as $file) {
     );
     // $log['import_file_' . $next_id . '_result'] = $result;
     $import_records[] = $record;
+
+    if (!empty($config->limit) && count($import_records) >= $config->limit) {
+        // Stop looping through files
+        $log[] = "Exiting after " . $config->limit . " files per limit setting in config";
+        break;
+    }
+
     $next_id++;
 }
 
@@ -110,6 +117,9 @@ foreach ($files as $file) {
 
 $log['skipped_files_count'] = count($skipped_files);
 $log['imported_record_count'] = count($import_records);
-
 print_r($log);
 
+if (is_dir('output')) {
+    $file = "output/" . date('Y-m-d_H_i_s_bulk_upload.log');
+    file_put_contents($file, print_r($log), FILE_APPEND);
+}
